@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stack Data Structure & Real-World Applications | Interactive Engine</title>
+  <meta name="description" content="Interactive visualization of the Stack Data Structure in real-world applications: Dijkstra's Shunting-Yard parsing, delimiter syntax validation, postfix evaluation, and Undo/Redo architecture.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-brand">
+        <div class="brand-icon">
+          <span class="stack-layer layer-3"></span>
+          <span class="stack-layer layer-2"></span>
+          <span class="stack-layer layer-1"></span>
+        </div>
+        <div>
+          <h1>Stack <span class="gradient-text">Architect</span></h1>
+          <p class="subtitle">Data Structures &amp; Algorithms Assignment &bull; Real-World Applications &amp; Visual Engine</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <nav class="nav-tabs" id="navTabs">
+          <button class="tab-btn active" data-tab="evaluator-tab" id="tabEvaluator">Expression Engine</button>
+          <button class="tab-btn" data-tab="sandbox-tab" id="tabSandbox">Stack ADT Sandbox</button>
+          <button class="tab-btn" data-tab="undoredo-tab" id="tabUndoRedo">Undo / Redo System</button>
+          <button class="tab-btn" data-tab="theory-tab" id="tabTheory">Theory &amp; Applications</button>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="content-area">
+
+      <!-- ================================================================= -->
+      <!-- TAB 1: EXPRESSION ENGINE & VISUAL SHUNTING-YARD EVALUATOR -->
+      <!-- ================================================================= -->
+      <section class="tab-pane active" id="evaluator-tab">
+        <div class="card glass-panel control-bar">
+          <div class="input-row">
+            <div class="input-wrapper">
+              <label for="exprInput" class="input-label">Infix Expression</label>
+              <input type="text" id="exprInput" value="3 + 4 * (2 - 1)" placeholder="e.g. 2 ^ 3 ^ 2 or (3 + 4) * sqrt(16)" autocomplete="off">
+            </div>
+            <div class="btn-group">
+              <button class="btn btn-primary" id="btnEvaluate">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                Parse &amp; Evaluate
+              </button>
+              <button class="btn btn-secondary" id="btnStepToggle">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                Step-by-Step Mode
+              </button>
+            </div>
+          </div>
+
+          <!-- Presets -->
+          <div class="presets-row">
+            <span class="presets-label">Presets:</span>
+            <button class="preset-chip" data-expr="3 + 4 * (2 - 1)">Standard Precedence: 3 + 4 * (2 - 1)</button>
+            <button class="preset-chip" data-expr="2 ^ 3 ^ 2">Right-Associative: 2 ^ 3 ^ 2</button>
+            <button class="preset-chip" data-expr="{[2 + 3] * (4 + 1)}">Multi-Brackets: {[2 + 3] * (4 + 1)}</button>
+            <button class="preset-chip" data-expr="sqrt(16) + 5 * 2">Functions: sqrt(16) + 5 * 2</button>
+            <button class="preset-chip error-chip" data-expr="10 / (5 - 5)">Edge Case: Div by Zero</button>
+            <button class="preset-chip error-chip" data-expr="[(3 + 2])">Syntax Error: [(3 + 2])</button>
+          </div>
+        </div>
+
+        <!-- Notification Banner -->
+        <div id="evalAlert" class="alert-banner hidden"></div>
+
+        <!-- Engine Summary Cards -->
+        <div class="summary-grid">
+          <div class="card metric-card">
+            <div class="metric-header">
+              <span class="metric-title">Delimiter Status</span>
+              <span class="badge" id="bracketStatusBadge">Ready</span>
+            </div>
+            <div class="metric-value font-mono" id="bracketStatusText">Syntax Validated</div>
+            <p class="metric-desc">Validated via Delimiter Matching Stack O(N)</p>
+          </div>
+
+          <div class="card metric-card">
+            <div class="metric-header">
+              <span class="metric-title">Postfix (RPN) Output</span>
+              <span class="badge badge-accent">Shunting-Yard</span>
+            </div>
+            <div class="metric-value font-mono text-cyan" id="postfixOutput">3 4 2 1 - * +</div>
+            <p class="metric-desc">Parentheses eliminated, precedence resolved</p>
+          </div>
+
+          <div class="card metric-card highlight-card">
+            <div class="metric-header">
+              <span class="metric-title">Evaluated Result</span>
+              <span class="badge badge-success">Final Value</span>
+            </div>
+            <div class="metric-value font-mono text-gradient" id="finalResult">7</div>
+            <p class="metric-desc">Computed via Postfix Operand Stack O(N)</p>
+          </div>
+        </div>
+
+        <!-- Step-by-Step Playback Controller (Shown when stepping) -->
+        <div class="card glass-panel stepper-card" id="stepperControls">
+          <div class="stepper-header">
+            <div>
+              <h3 class="stepper-title" id="stepperPhaseTitle">Phase 1: Dijkstra's Shunting-Yard Infix to Postfix</h3>
+              <p class="stepper-desc" id="stepperActionDesc">Initializing stack parser...</p>
+            </div>
+            <div class="step-indicator" id="stepCounter">Step 0 / 0</div>
+          </div>
+          <div class="stepper-buttons">
+            <button class="btn btn-sm btn-outline" id="btnPrevStep">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="19 20 9 12 19 4 19 20"></polygon><line x1="5" y1="19" x2="5" y2="5"></line></svg>
+              Previous
+            </button>
+            <button class="btn btn-sm btn-primary" id="btnPlayPause">Play</button>
+            <button class="btn btn-sm btn-outline" id="btnNextStep">
+              Next
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg>
+            </button>
+            <div class="speed-control">
+              <label for="speedRange">Speed:</label>
+              <input type="range" id="speedRange" min="200" max="1500" value="700" step="100">
+            </div>
+          </div>
+        </div>
+
+        <!-- Visual Stacks Dual View -->
+        <div class="visualizer-grid">
+          <!-- Stack Visualizer 1: Shunting-Yard Operator Stack -->
+          <div class="card stack-card">
+            <div class="stack-card-header">
+              <div>
+                <h3 class="card-title">Operator Precedence Stack</h3>
+                <p class="card-subtitle">Shunting-Yard conversion stack &bull; LIFO</p>
+              </div>
+              <span class="badge badge-purple" id="operatorStackCount">0 items</span>
+            </div>
+
+            <div class="stack-viewport-container">
+              <div class="stack-top-pointer">
+                <span class="pointer-arrow">&darr;</span> TOP OF STACK
+              </div>
+              <div class="stack-viewport" id="operatorStackVisual">
+                <!-- Stack items dynamically inserted here -->
+                <div class="stack-empty-state">Stack is Empty</div>
+              </div>
+              <div class="stack-base">STACK BASE</div>
+            </div>
+
+            <div class="stack-info-footer">
+              <div class="info-tag"><strong>Push:</strong> Token precedence &le; top</div>
+              <div class="info-tag"><strong>Pop:</strong> High precedence drained</div>
+            </div>
+          </div>
+
+          <!-- Stack Visualizer 2: Postfix Value Stack -->
+          <div class="card stack-card">
+            <div class="stack-card-header">
+              <div>
+                <h3 class="card-title">Postfix Operand Stack</h3>
+                <p class="card-subtitle">Numerical computation stack &bull; LIFO</p>
+              </div>
+              <span class="badge badge-emerald" id="valueStackCount">0 items</span>
+            </div>
+
+            <div class="stack-viewport-container">
+              <div class="stack-top-pointer">
+                <span class="pointer-arrow">&darr;</span> TOP OF STACK
+              </div>
+              <div class="stack-viewport" id="valueStackVisual">
+                <!-- Stack items dynamically inserted here -->
+                <div class="stack-empty-state">Stack is Empty</div>
+              </div>
+              <div class="stack-base">STACK BASE</div>
+            </div>
+
+            <div class="stack-info-footer">
+              <div class="info-tag"><strong>Push:</strong> Number literals</div>
+              <div class="info-tag"><strong>Pop:</strong> Operands for operator</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Algorithm Trace Table -->
+        <div class="card trace-card">
+          <div class="trace-header">
+            <h3 class="card-title">Execution Trace Log</h3>
+            <span class="badge">Chronological Stack Operations</span>
+          </div>
+          <div class="table-responsive">
+            <table class="trace-table" id="traceTable">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Token</th>
+                  <th>Type</th>
+                  <th>Action</th>
+                  <th>Stack State (Bottom &rarr; Top)</th>
+                  <th>Output Buffer</th>
+                </tr>
+              </thead>
+              <tbody id="traceTableBody">
+                <!-- Rows injected via JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================= -->
+      <!-- TAB 2: INTERACTIVE STACK ADT SANDBOX -->
+      <!-- ================================================================= -->
+      <section class="tab-pane" id="sandbox-tab">
+        <div class="sandbox-layout">
+          <div class="card glass-panel sandbox-controls">
+            <h3 class="card-title">Stack Operations Controller</h3>
+            <p class="card-subtitle">Directly manipulate an Abstract Data Type Stack</p>
+
+            <div class="sandbox-input-group">
+              <label for="sandboxValue" class="input-label">Element Value</label>
+              <div class="input-with-btn">
+                <input type="text" id="sandboxValue" placeholder="Enter number or text (e.g. 42, 'data')">
+                <button class="btn btn-primary" id="btnPushSandbox">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+                  Push
+                </button>
+              </div>
+            </div>
+
+            <div class="operations-grid">
+              <button class="btn btn-secondary" id="btnPopSandbox">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+                Pop() &bull; O(1)
+              </button>
+              <button class="btn btn-outline" id="btnPeekSandbox">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                Peek() &bull; O(1)
+              </button>
+              <button class="btn btn-outline" id="btnCheckEmptySandbox">
+                IsEmpty()?
+              </button>
+              <button class="btn btn-danger" id="btnClearSandbox">
+                Clear()
+              </button>
+            </div>
+
+            <div class="card metric-card mt-4">
+              <div class="metric-header">
+                <span class="metric-title">Sandbox Stack Metrics</span>
+              </div>
+              <div class="metric-row">
+                <span>Current Size:</span>
+                <strong id="sandboxSizeText" class="text-cyan">0 elements</strong>
+              </div>
+              <div class="metric-row">
+                <span>Top Element:</span>
+                <strong id="sandboxTopText" class="text-emerald">None (Empty)</strong>
+              </div>
+              <div class="metric-row">
+                <span>Operation Complexity:</span>
+                <span class="badge badge-accent">Strict O(1)</span>
+              </div>
+            </div>
+
+            <div class="audit-log">
+              <div class="audit-log-title">Live Operation Log</div>
+              <div class="log-entries" id="sandboxLogEntries">
+                <div class="log-item">Initialized empty stack ADT. Capacity: Dynamic.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Visual Sandbox Column -->
+          <div class="card stack-card">
+            <div class="stack-card-header">
+              <div>
+                <h3 class="card-title">Live Physical Stack</h3>
+                <p class="card-subtitle">Last-In, First-Out (LIFO) Storage Model</p>
+              </div>
+              <span class="badge badge-primary" id="sandboxItemCount">0 items</span>
+            </div>
+
+            <div class="stack-viewport-container tall">
+              <div class="stack-top-pointer">
+                <span class="pointer-arrow">&darr;</span> STACK TOP (Active Pointer)
+              </div>
+              <div class="stack-viewport" id="sandboxStackVisual">
+                <div class="stack-empty-state">Stack is Empty. Use Push to add items.</div>
+              </div>
+              <div class="stack-base">MEMORY BASE (Index 0)</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================= -->
+      <!-- TAB 3: UNDO / REDO TWO-STACK SYSTEM -->
+      <!-- ================================================================= -->
+      <section class="tab-pane" id="undoredo-tab">
+        <div class="undoredo-grid">
+          <div class="card glass-panel">
+            <h3 class="card-title">Interactive Document Editor</h3>
+            <p class="card-subtitle">Demonstrates software Undo/Redo architecture using dual coordinating stacks</p>
+
+            <div class="editor-toolbar">
+              <button class="btn btn-sm btn-primary" id="btnDocUndo" disabled>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+                Undo (Ctrl+Z)
+              </button>
+              <button class="btn btn-sm btn-secondary" id="btnDocRedo" disabled>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                Redo (Ctrl+Y)
+              </button>
+              <span class="editor-status" id="editorStatusText">Type text or click quick action buttons</span>
+            </div>
+
+            <textarea id="docEditorArea" class="doc-editor" placeholder="Type notes here... each typed segment or action will push to the Undo Stack."></textarea>
+
+            <div class="quick-actions">
+              <span class="presets-label">Quick Actions:</span>
+              <button class="preset-chip" id="btnActionAddHeader">+ Header</button>
+              <button class="preset-chip" id="btnActionAddFormula">+ Equation</button>
+              <button class="preset-chip" id="btnActionBold">**Bold Word**</button>
+              <button class="preset-chip" id="btnActionClearText">Clear All</button>
+            </div>
+
+            <div class="system-explanation mt-4">
+              <h4>How the Dual-Stack Undo/Redo Works:</h4>
+              <ol>
+                <li>Every user action creates a snapshot or inverse command pushed to <code>UndoStack</code>.</li>
+                <li>Pressing <strong>Undo</strong> pops from <code>UndoStack</code>, reverts state, and pushes to <code>RedoStack</code>.</li>
+                <li>Pressing <strong>Redo</strong> pops from <code>RedoStack</code>, reapplies the command, and pushes back to <code>UndoStack</code>.</li>
+                <li><strong>Crucial Invariant:</strong> Any brand-new user edit completely wipes <code>RedoStack</code> to maintain linear timeline causality.</li>
+              </ol>
+            </div>
+          </div>
+
+          <!-- Dual Visual Stacks -->
+          <div class="dual-stacks-view">
+            <!-- Undo Stack -->
+            <div class="card stack-card">
+              <div class="stack-card-header">
+                <div>
+                  <h3 class="card-title text-cyan">Undo Stack</h3>
+                  <p class="card-subtitle">Stores previous states</p>
+                </div>
+                <span class="badge badge-accent" id="undoCountBadge">0 states</span>
+              </div>
+              <div class="stack-viewport-container compact">
+                <div class="stack-top-pointer">TOP OF STACK</div>
+                <div class="stack-viewport" id="undoStackVisual">
+                  <div class="stack-empty-state">No undo actions</div>
+                </div>
+                <div class="stack-base">BASE</div>
+              </div>
+            </div>
+
+            <!-- Redo Stack -->
+            <div class="card stack-card">
+              <div class="stack-card-header">
+                <div>
+                  <h3 class="card-title text-purple">Redo Stack</h3>
+                  <p class="card-subtitle">Stores undone states</p>
+                </div>
+                <span class="badge badge-purple" id="redoCountBadge">0 states</span>
+              </div>
+              <div class="stack-viewport-container compact">
+                <div class="stack-top-pointer">TOP OF STACK</div>
+                <div class="stack-viewport" id="redoStackVisual">
+                  <div class="stack-empty-state">No redo actions</div>
+                </div>
+                <div class="stack-base">BASE</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================= -->
+      <!-- TAB 4: COMPREHENSIVE THEORY & REAL-WORLD APPLICATIONS -->
+      <!-- ================================================================= -->
+      <section class="tab-pane" id="theory-tab">
+        <div class="theory-container">
+          <div class="card glass-panel">
+            <h2>Real-World Applications of Stacks</h2>
+            <p class="lead">Why the Last-In, First-Out (LIFO) paradigm is fundamental across computer engineering.</p>
+
+            <div class="app-cards-grid">
+              <div class="theory-app-card">
+                <div class="app-icon">🖥️</div>
+                <h3>1. OS Call Stack &amp; Recursion</h3>
+                <p>Every active thread in modern operating systems relies on a Call Stack. Each function invocation allocates an Activation Record (Stack Frame) storing return address, arguments, and local variables. When child functions return, frames pop in exact LIFO order.</p>
+                <div class="app-tag">OS &amp; Runtimes (C, Java, Python, V8)</div>
+              </div>
+
+              <div class="theory-app-card">
+                <div class="app-icon">↩️</div>
+                <h3>2. Undo / Redo Frameworks</h3>
+                <p>Text editors (VS Code), vector illustration tools (Figma), and CAD software implement the Command/Memento pattern using dual stacks. The Undo Stack stores previous operations, while the Redo Stack stores reversed operations until new modifications invalidate the future branch.</p>
+                <div class="app-tag">Productivity Software &amp; Editors</div>
+              </div>
+
+              <div class="theory-app-card">
+                <div class="app-icon">🌐</div>
+                <h3>3. Web Browser History Navigation</h3>
+                <p>Web browsers manage navigation via a Back Stack and a Forward Stack. Clicking links pushes to the Back Stack. Clicking "Back" pops the previous URL and pushes the active page to the Forward Stack. A new address entry resets the Forward Stack.</p>
+                <div class="app-tag">Browsers (Chrome, Firefox, Safari)</div>
+              </div>
+
+              <div class="theory-app-card">
+                <div class="app-icon">⚙️</div>
+                <h3>4. Expression Parsing &amp; Compilers</h3>
+                <p>Compilers use stacks for syntax parsing, Abstract Syntax Tree (AST) creation, and evaluating expressions with precedence and associativity. Dijkstra's Shunting-Yard algorithm transforms Infix to Postfix notation, and stack machines execute bytecodes.</p>
+                <div class="app-tag">Compilers &amp; Bytecode VMs (JVM, CLR)</div>
+              </div>
+
+              <div class="theory-app-card">
+                <div class="app-icon">🧩</div>
+                <h3>5. Balanced Delimiter Verification</h3>
+                <p>Code linters and IDEs parse source code to ensure brackets <code>()</code>, <code>[]</code>, <code>{}</code> are symmetrically matched and properly nested. Opening brackets are pushed; closing brackets must complement the top stack item.</p>
+                <div class="app-tag">IDEs, Linters, Static Analyzers</div>
+              </div>
+
+              <div class="theory-app-card">
+                <div class="app-icon">🗺️</div>
+                <h3>6. Backtracking &amp; Depth-First Search</h3>
+                <p>From maze pathfinding and robotics route-finding to puzzle engines (Sudoku, Chess), backtracking searches down a branch and uses a stack to rewind to the most recent untried decision fork when reaching a dead end.</p>
+                <div class="app-tag">AI, Pathfinding, Graph Algorithms</div>
+              </div>
+            </div>
+
+            <div class="theory-divider"></div>
+
+            <h2>Why Stacks are Strictly Necessary</h2>
+            <div class="why-grid">
+              <div class="why-item">
+                <h4>🔒 Architectural Invariant Enforcement</h4>
+                <p>Unlike arrays that allow random write access (<code>arr[i] = v</code>), a stack restricts operations strictly to the top. This encapsulation prevents corruption of past states and ensures nested subroutines cannot jump or mutate parent frames out of sequence.</p>
+              </div>
+              <div class="why-item">
+                <h4>⏱️ Guaranteed O(1) Operations</h4>
+                <p>Array insertions or deletions at intermediate indices incur O(N) overhead from element shifting. The Stack ADT delivers strict O(1) worst-case time complexity for push, pop, and peek.</p>
+              </div>
+              <div class="why-item">
+                <h4>⚡ Hardware &amp; Cache Efficiency</h4>
+                <p>Hardware call stacks simply adjust the stack pointer register (%rsp). There is zero memory fragmentation, and spatial locality is optimal, resulting in near-100% L1/L2 CPU cache hit rates.</p>
+              </div>
+              <div class="why-item">
+                <h4>🔄 Exact Mathematical Model for Nested Lifetimes</h4>
+                <p>Whenever a task begins inside an uncompleted task (e.g. function calls, sub-expressions in parentheses, compound transactions), the child's lifetime is entirely contained inside the parent's lifetime. LIFO is the exact mathematical model of nested intervals.</p>
+              </div>
+            </div>
+
+            <div class="theory-download-box">
+              <div class="download-text">
+                <strong>Need the complete formal report?</strong>
+                <p>The academic report is saved in this repository as <code>assignment_report.md</code>.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <div>Data Structures &amp; Algorithms Assignment &bull; Topic: Stack Applications</div>
+      <div class="footer-links">
+        <span>Stack: <code>HTML5</code> &bull; <code>CSS3</code> &bull; <code>JavaScript (ES6+)</code></span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
